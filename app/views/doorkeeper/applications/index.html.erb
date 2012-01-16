@@ -18,7 +18,7 @@
       <% @applications.each do |application| %>
         <tr>
           <td><%= link_to application.name, application %></td>
-          <td><%= application.redirect_uri %></td>
+          <td><%= application.has_registered_redirect_uris? ? application.application_redirect_uris.map(&:redirect_uri).join(", ") : "No callbacks urls defined" %></td>
           <td><%= link_to 'Edit', edit_application_path(application) %></td>
           <td><%= link_to 'Destroy', application, :confirm => 'Are you sure?', :method => :delete %></td>
         </tr>

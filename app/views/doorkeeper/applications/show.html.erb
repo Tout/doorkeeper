@@ -5,8 +5,10 @@
 </div>
 
 <div class="span10">
-  <h4>Callback url:</h4>
-  <p><%= @application.redirect_uri %></p>
+  <h4>Callback uris:</h4>
+  <% @application.application_redirect_uris do |redirect_uri| %>
+    <p><%= redirect_uri %></p>
+  <% end %>
 
   <h4>Application Id:</h4>
   <p><code><%= @application.uid %></code></p>

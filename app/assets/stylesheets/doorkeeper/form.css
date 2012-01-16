@@ -6,3 +6,17 @@
 .error .help-inline {
   color: #B94A48;
 }
+
+form .redirect_uri {
+  padding-bottom: 10px;
+}
+
+form input.destroy {
+  margin-left: 10px;
+}
+
+form label.destroy {
+  float:right;
+  width: 70px;
+  padding-right: 110px;
+}

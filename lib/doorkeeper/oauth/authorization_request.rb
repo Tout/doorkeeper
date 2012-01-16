@@ -47,7 +47,9 @@ module Doorkeeper::OAuth
 
     def invalid_redirect_uri
       uri_builder = is_token_request? ? :uri_with_fragment : :uri_with_query
-      send(uri_builder, redirect_uri, {
+      uri = redirect_uri
+      uri ||= client.default_redirect_uri
+      send(uri_builder, uri, {
         :error => error,
         :error_description => error_description,
         :state => state
@@ -86,7 +88,10 @@ module Doorkeeper::OAuth
         return false unless uri.fragment.nil?
         return false if uri.scheme.nil?
         return false if uri.host.nil?
+        return true unless client.has_registered_redirect_uris?
         client.is_matching_redirect_uri?(redirect_uri)
+      else
+        return false if client.requires_redirect_uri_in_request?
       end
     end
 

@@ -66,7 +66,7 @@ describe Doorkeeper::AuthorizationsController do
     it "returns the existing access token in a fragment" do
       pending "It seems that authorization server should always issue a new token"
       lambda {
-        get :new, :client_id => @client.uid, :response_type => "token", :redirect_uri => @client.redirect_uri, :use_route => :doorkeeper
+        get :new, :client_id => @client.uid, :response_type => "token", :redirect_uri => @client.default_redirect_uri, :use_route => :doorkeeper
         response.should be_redirect
         uri = response.location
         fragment_params = parse_fragment_params(uri)
@@ -80,7 +80,7 @@ describe Doorkeeper::AuthorizationsController do
     it "returns an error in a fragment for an invalid request" do
       @access_token = Factory :access_token, :application => @client, :resource_owner_id => @user.id
       lambda {
-        get :new, :client_id => @client.uid, :response_type => "token", :redirect_uri => @client.redirect_uri, :scope => "invalid", :use_route => :doorkeeper
+        get :new, :client_id => @client.uid, :response_type => "token", :redirect_uri => @client.default_redirect_uri, :scope => "invalid", :use_route => :doorkeeper
         response.should be_redirect
         uri = response.location
         fragment_params = parse_fragment_params(uri)
@@ -125,7 +125,7 @@ describe Doorkeeper::AuthorizationsController do
 
     it "creates a new access token and returns it in a fragment" do
       lambda {
-        post :create, :client_id => @client.uid, :response_type => "token", :redirect_uri => @client.redirect_uri, :use_route => :doorkeeper
+        post :create, :client_id => @client.uid, :response_type => "token", :redirect_uri => @client.default_redirect_uri, :use_route => :doorkeeper
         response.should be_redirect
         uri = response.location
         fragment_params = parse_fragment_params(uri)
@@ -140,7 +140,7 @@ describe Doorkeeper::AuthorizationsController do
       pending "It seems that authorization server should always issue a new token"
       @access_token = Factory :access_token, :application => @client, :resource_owner_id => @user.id, :scopes => "public"
       lambda {
-        post :create, :client_id => @client.uid, :response_type => "token", :redirect_uri => @client.redirect_uri, :use_route => :doorkeeper
+        post :create, :client_id => @client.uid, :response_type => "token", :redirect_uri => @client.default_redirect_uri, :use_route => :doorkeeper
         response.should be_redirect
         uri = response.location
         fragment_params = parse_fragment_params(uri)
@@ -154,7 +154,7 @@ describe Doorkeeper::AuthorizationsController do
     it "returns an error in a fragment for an invalid request" do
       @access_token = Factory :access_token, :application => @client, :resource_owner_id => @user.id
       lambda {
-        post :create, :client_id => @client.uid, :response_type => "token", :redirect_uri => @client.redirect_uri, :scope => "invalid", :use_route => :doorkeeper
+        post :create, :client_id => @client.uid, :response_type => "token", :redirect_uri => @client.default_redirect_uri, :scope => "invalid", :use_route => :doorkeeper
         response.should be_redirect
         uri = response.location
         fragment_params = parse_fragment_params(uri)

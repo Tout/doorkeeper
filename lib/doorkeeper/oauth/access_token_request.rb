@@ -97,7 +97,10 @@ module Doorkeeper::OAuth
       if refresh_token_enabled? && refresh_token?
         refresh_token.present?
       else
-        code.present? && redirect_uri.present?
+        return false unless code.present?
+        return true if redirect_uri.present?
+        return true unless base_token
+        base_token.redirect_uri.nil?
       end
     end
 
@@ -119,7 +122,9 @@ module Doorkeeper::OAuth
     end
 
     def validate_redirect_uri
-      refresh_token? ? true : base_token.redirect_uri == redirect_uri
+      return true if refresh_token?
+      return true if base_token.redirect_uri.nil?
+      base_token.redirect_uri == redirect_uri
     end
 
     def validate_grant_type

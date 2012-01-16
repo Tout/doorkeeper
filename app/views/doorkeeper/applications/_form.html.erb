@@ -12,10 +12,16 @@
     </div>
 
     <div class="clearfix">
-      <%= f.label :redirect_uri %>
-      <div class="input">
-        <%= f.text_field :redirect_uri %>
-      </div>
+      <%= f.label :redirect_uris %>
+	  <%= f.fields_for :application_redirect_uris do |redirect_uri| %>
+	    <div class="input redirect_uri">
+	      <%= redirect_uri.text_field :redirect_uri, :disabled => redirect_uri.object.persisted? %>
+	      <% if redirect_uri.object.persisted? %>
+	        <%= redirect_uri.check_box :_destroy, :class => "destroy" %>
+	        <%= redirect_uri.label :_destroy, "Delete URI", :class => "destroy" %>
+	      <% end %>
+	    </div>
+      <% end %>
     </div class="clearfix">
 
     <div class="actions">

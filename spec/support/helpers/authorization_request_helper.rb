@@ -31,7 +31,7 @@ module AuthorizationRequestHelper
   end
 
   def i_should_be_on_client_callback(client)
-    client.redirect_uri.should == "#{current_uri.scheme}://#{current_uri.host}#{current_uri.path}"
+    client.default_redirect_uri.should == "#{current_uri.scheme}://#{current_uri.host}#{current_uri.path}"
   end
 
   def parse_fragment_params(uri)

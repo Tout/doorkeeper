@@ -5,9 +5,16 @@ class AccessGrant < ActiveRecord::Base
 
   belongs_to :application
 
-  validates :resource_owner_id, :application_id, :token, :expires_in, :redirect_uri, :presence => true
+  validates :resource_owner_id, :application_id, :token, :expires_in, :presence => true
+  validate :redirect_uri
 
   before_validation :generate_token, :on => :create
+
+  def validate_redirect_uri
+    if application.requires_redirect_uri_in_request?
+      errors.add(:redirect_uri, "can't be blank.") unless redirect_uri.present?
+    end
+  end
 
   def expired?
     expires_in.present? && Time.now > expired_time

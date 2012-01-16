@@ -23,7 +23,9 @@ module Doorkeeper
         end
 
         def callback
-          uri_with_query(authorization.redirect_uri, {
+          uri = authorization.redirect_uri
+          uri ||= authorization.client.default_redirect_uri
+          uri_with_query(uri, {
             :code  => grant.token,
             :state => authorization.state
           })

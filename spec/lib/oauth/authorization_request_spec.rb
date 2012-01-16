@@ -3,22 +3,24 @@ require 'spec_helper_integration'
 module Doorkeeper::OAuth
   describe AuthorizationRequest do
     let(:resource_owner) { double(:resource_owner, :id => 1) }
-    let(:client)         { Factory(:application) }
-    let(:base_attributes) do
-      {
-        :client_id     => client.uid,
-        :redirect_uri  => client.redirect_uri,
-        :scope         => "public write",
-        :state         => "return-this"
-      }
-    end
 
     before :each do
       Doorkeeper.stub_chain(:configuration, :scopes, :exists?).and_return(true)
       Doorkeeper.stub_chain(:configuration, :scopes, :all).and_return([Doorkeeper::Scope.new(:public)])
     end
 
-    describe "with a code response_type" do
+    describe "for a public application with a single redirect URI for the application" do
+      let(:client)         { Factory(:application) }
+      let(:base_attributes) do
+        {
+          :client_id     => client.uid,
+          :redirect_uri  => client.default_redirect_uri,
+          :scope         => "public write",
+          :state         => "return-this"
+        }
+      end
+
+      describe "with a code response_type" do
       let(:attributes) { base_attributes.merge!(:response_type => "code") }
 
       describe "with valid attributes" do
@@ -76,7 +78,7 @@ module Doorkeeper::OAuth
       describe "with a redirect_uri with query params" do
         let(:original_query_params) { "abc=123&def=456" }
         let(:attributes_with_query_params) {
-          u = URI.parse(client.redirect_uri)
+          u = URI.parse(client.default_redirect_uri)
           u.query = original_query_params
           attributes[:redirect_uri] = u.to_s
           attributes
@@ -151,7 +153,7 @@ module Doorkeeper::OAuth
         end
 
         describe "when :redirect_uri contains a fragment" do
-          subject     { auth(attributes.merge(:redirect_uri => (client.redirect_uri + "#abc"))) }
+          subject     { auth(attributes.merge(:redirect_uri => (client.default_redirect_uri + "#abc"))) }
           its(:error) { should == :invalid_redirect_uri }
         end
 
@@ -183,7 +185,7 @@ module Doorkeeper::OAuth
       end
     end
 
-    describe "with a token response_type" do
+      describe "with a token response_type" do
       before do
         Doorkeeper.stub_chain(:configuration, :access_token_expires_in).and_return(7200)
       end
@@ -299,7 +301,7 @@ module Doorkeeper::OAuth
           new_client = Application.find_by_uid(client.uid)
           Application.should_receive(:find_by_uid).with(client.uid).and_return(new_client)
           new_client.should_not_receive(:is_matching_redirect_uri?)
-          subject = auth(attributes.merge(:redirect_uri => client.redirect_uri + "#xyz"))
+          subject = auth(attributes.merge(:redirect_uri => client.default_redirect_uri + "#xyz"))
           subject.error.should == :invalid_redirect_uri
         end
       end
@@ -320,7 +322,7 @@ module Doorkeeper::OAuth
         end
 
         describe "when :redirect_uri contains a fragment" do
-          subject     { auth(attributes.merge(:redirect_uri => (client.redirect_uri + "#abc"))) }
+          subject     { auth(attributes.merge(:redirect_uri => (client.default_redirect_uri + "#abc"))) }
           its(:error) { should == :invalid_redirect_uri }
         end
 
@@ -353,8 +355,140 @@ module Doorkeeper::OAuth
 
     end
 
+    end
+
+    describe "for an confidential application with no redirect URIs defined" do
+      let(:client)         { Factory(:application_without_redirect_uris) }
+      let(:base_attributes) do
+        {
+          :client_id     => client.uid,
+          :redirect_uri  => "https://app.com/redirect",
+          :scope         => "public write",
+          :state         => "return-this"
+        }
+      end
+
+      describe "with a code response_type" do
+        let(:attributes) { base_attributes.merge!(:response_type => "code") }
+
+        describe "with valid attributes" do
+          subject { AuthorizationRequest.new(resource_owner, attributes) }
+
+          describe "after authorization" do
+            before { subject.authorize }
+
+            its(:response_type) { should == "code" }
+            its(:client_id)     { should == client.uid }
+            its(:scope)         { should == "public write" }
+            its(:state)         { should == "return-this" }
+            its(:error)         { should be_nil }
+
+            describe ".success_redirect_uri" do
+              let(:uri_without_query) { 
+                uri = URI.parse(subject.success_redirect_uri)
+                uri.query = nil
+                uri.to_s
+              }
+              let(:query) { URI.parse(subject.success_redirect_uri).query }
+
+              it "includes the grant code" do
+                query.should =~ %r{code=\w+}
+              end
+
+              it "includes the state previous assumed" do
+                query.should =~ %r{state=return-this}
+              end
+
+              it "should use the redirect uri from the request" do
+                uri_without_query.should == attributes[:redirect_uri]
+              end
+            end
+          end
+        end
+
+        describe "with errors" do
+          before do
+            AccessGrant.should_not_receive(:create)
+            Doorkeeper.stub_chain(:configuration, :scopes, :all).and_return([Doorkeeper::Scope.new(:public)])
+          end
+
+          describe "when the redirect_uri is missing" do
+            subject     { auth(attributes.except(:redirect_uri)) }
+            its(:error) { should == :invalid_redirect_uri }
+          end
+        end
+      end
+
+    end
+
+    describe "for a client with multiple redirect URIs defined" do
+
+      let(:client)         { Factory(:application_with_multiple_redirect_uris) }
+      let(:base_attributes) do
+        {
+          :client_id     => client.uid,
+          :redirect_uri  => client.default_redirect_uri,
+          :scope         => "public write",
+          :state         => "return-this"
+        }
+      end
+
+      describe "with a code response_type" do
+        let(:attributes) { base_attributes.merge!(:response_type => "code") }
+
+        describe "with valid attributes" do
+          subject { AuthorizationRequest.new(resource_owner, attributes) }
+
+          describe "after authorization" do
+            before { subject.authorize }
+
+            its(:response_type) { should == "code" }
+            its(:client_id)     { should == client.uid }
+            its(:scope)         { should == "public write" }
+            its(:state)         { should == "return-this" }
+            its(:error)         { should be_nil }
+
+            describe ".success_redirect_uri" do
+              let(:uri_without_query) { 
+                uri = URI.parse(subject.success_redirect_uri)
+                uri.query = nil
+                uri.to_s
+              }
+              let(:query) { URI.parse(subject.success_redirect_uri).query }
+
+              it "includes the grant code" do
+                query.should =~ %r{code=\w+}
+              end
+
+              it "includes the state previous assumed" do
+                query.should =~ %r{state=return-this}
+              end
+
+              it "should use the redirect uri from the request" do
+                uri_without_query.should == attributes[:redirect_uri]
+              end
+            end
+          end
+        end
+
+        describe "with errors" do
+          before do
+            AccessGrant.should_not_receive(:create)
+            Doorkeeper.stub_chain(:configuration, :scopes, :all).and_return([Doorkeeper::Scope.new(:public)])
+          end
+
+          describe "when the redirect_uri is missing" do
+            subject     { auth(attributes.except(:redirect_uri)) }
+            its(:error) { should == :invalid_redirect_uri }
+          end
+        end
+      end
+    end
+
     def auth(attributes)
       AuthorizationRequest.new(resource_owner, attributes)
     end
+
   end
+
 end

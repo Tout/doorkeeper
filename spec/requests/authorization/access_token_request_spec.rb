@@ -25,7 +25,7 @@ feature "Access Token Request" do
   end
 
   scenario "get access token for valid grant code with basic auth header" do
-    post token_endpoint_url(:code => @authorization.token, :redirect_uri => @client.redirect_uri), {} , { 'HTTP_AUTHORIZATION' => basic_auth_header_for_client(@client)}
+    post token_endpoint_url(:code => @authorization.token, :redirect_uri => @client.default_redirect_uri), {} , { 'HTTP_AUTHORIZATION' => basic_auth_header_for_client(@client)}
 
     token = AccessToken.where(:application_id => @client.id).first
     token.should_not be_nil
@@ -43,7 +43,7 @@ feature "Access Token Request" do
   end
 
   scenario "get access token for valid grant code with no client information" do
-    post token_endpoint_url(:code => @authorization.token, :redirect_uri => @client.redirect_uri)
+    post token_endpoint_url(:code => @authorization.token, :redirect_uri => @client.default_redirect_uri)
 
     token = AccessToken.where(:application_id => @client.id).first
     token.should be_nil

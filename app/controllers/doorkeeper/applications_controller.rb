@@ -10,6 +10,7 @@ module Doorkeeper
 
     def new
       @application = Application.new
+      @application.application_redirect_uris.build
     end
 
     def create
@@ -24,6 +25,7 @@ module Doorkeeper
 
     def edit
       @application = Application.find(params[:id])
+      @application.application_redirect_uris.build
     end
 
     def update

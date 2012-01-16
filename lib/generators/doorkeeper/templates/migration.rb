@@ -4,18 +4,26 @@ class CreateDoorkeeperTables < ActiveRecord::Migration
       t.string :name,         :null => false
       t.string :uid,          :null => false
       t.string :secret,       :null => false
-      t.string :redirect_uri, :null => false
+      t.boolean :public, :default => true, :null => false
       t.timestamps
     end
 
     add_index :oauth_applications, :uid, :unique => true
+
+    create_table :oauth_application_redirect_uris do |t|
+      t.integer :application_id, 	:null => false
+      t.string :redirect_uri, 		:null => false
+      t.timestamps
+    end
+
+    add_index :oauth_application_redirect_uris, :application_id
 
     create_table :oauth_access_grants do |t|
       t.integer  :resource_owner_id, :null => false
       t.integer  :application_id,    :null => false
       t.string   :token,             :null => false
       t.integer  :expires_in,        :null => false
-      t.string   :redirect_uri,      :null => false
+      t.string   :redirect_uri
       t.datetime :created_at,        :null => false
       t.datetime :revoked_at
       t.string   :scopes
