@@ -10,8 +10,9 @@ class Doorkeeper::AuthorizationsController < Doorkeeper::ApplicationController
     elsif authorization.redirect_on_error?
       redirect_to authorization.invalid_redirect_uri
     else
-      render :error
+      render_view_for_display :error
     end
+    render_view_for_display :new
   end
 
   def create
@@ -20,7 +21,7 @@ class Doorkeeper::AuthorizationsController < Doorkeeper::ApplicationController
     elsif authorization.redirect_on_error?
       redirect_to authorization.invalid_redirect_uri
     else
-      render :error
+      render_view_for_display :error
     end
   end
 
@@ -30,6 +31,9 @@ class Doorkeeper::AuthorizationsController < Doorkeeper::ApplicationController
   end
 
   private
+  def render_view_for_display(view)
+    render view.to_s
+  end
 
   def authorization
     @authorization ||= Doorkeeper::OAuth::AuthorizationRequest.new(current_resource_owner, params)
