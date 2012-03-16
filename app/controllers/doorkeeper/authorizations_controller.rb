@@ -5,14 +5,14 @@ class Doorkeeper::AuthorizationsController < Doorkeeper::ApplicationController
     if authorization.valid?
       if authorization.access_token_exists?
         authorization.authorize
-        redirect_to authorization.success_redirect_uri
+        redirect_to authorization.success_redirect_uri and return
       end
     elsif authorization.redirect_on_error?
-      redirect_to authorization.invalid_redirect_uri
+      redirect_to authorization.invalid_redirect_uri and return
     else
       render_view_for_display :error and return
     end
-    render_view_for_display :new
+    render_view_for_display :new and return
   end
 
   def create
