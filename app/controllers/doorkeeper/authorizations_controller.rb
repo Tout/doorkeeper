@@ -10,7 +10,7 @@ class Doorkeeper::AuthorizationsController < Doorkeeper::ApplicationController
     elsif authorization.redirect_on_error?
       redirect_to authorization.invalid_redirect_uri
     else
-      render_view_for_display :error
+      render_view_for_display :error and return
     end
     render_view_for_display :new
   end
