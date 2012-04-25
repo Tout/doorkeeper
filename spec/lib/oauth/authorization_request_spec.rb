@@ -7,7 +7,6 @@ module Doorkeeper::OAuth
     let(:base_attributes) do
       {
         :client_id     => client.uid,
-        :redirect_uri  => client.redirect_uri,
         :scope         => "public write",
         :state         => "return-this"
       }
@@ -22,8 +21,61 @@ module Doorkeeper::OAuth
     describe "with a code response_type" do
       let(:attributes) { base_attributes.merge!(:response_type => "code") }
 
-      describe "with valid attributes" do
+      describe "with valid attributes but no redirect_uri provided" do
         subject { AuthorizationRequest.new(resource_owner, attributes) }
+
+        describe "after authorization" do
+          before { subject.authorize }
+
+          its(:response_type) { should == "code" }
+          its(:client_id)     { should == client.uid }
+          its(:scope)         { should == "public write" }
+          its(:state)         { should == "return-this" }
+          its(:error)         { should be_nil }
+
+          describe ".success_redirect_uri" do
+            let(:query) { URI.parse(subject.success_redirect_uri).query }
+
+            it "includes the grant code" do
+              query.should =~ %r{code=\w+}
+            end
+
+            it "includes the state previous assumed" do
+              query.should =~ %r{state=return-this}
+            end
+          end
+        end
+
+        describe :scopes  do
+          it "returns scopes objects returned by Doorkeeper::Scopes with names specified by scopes" do
+            scopes_object = double(Doorkeeper::Scopes)
+            Doorkeeper.stub_chain(:configuration, :scopes, :with_names).with("public", "write").and_return(scopes_object)
+            subject.scopes.should == scopes_object
+          end
+        end
+
+        describe :authorize do
+          let(:authorization_request) { AuthorizationRequest.new(resource_owner, attributes) }
+          subject { authorization_request.authorize }
+
+          it "returns Doorkeeper::AccessGrant object" do
+            subject.is_a? Doorkeeper::AccessGrant
+          end
+
+          it "returns instance saved in the database" do
+            subject.should be_persisted
+          end
+
+          it "returns object that has scopes attribute same as scope attribute of authorization request" do
+            subject.scopes == authorization_request.scope
+          end
+        end
+
+      end
+
+      describe "with valid attributes and a redirect_uri provided" do
+        let(:attributes_with_redirect) {attributes.merge!(:redirect_uri => client.redirect_uri)}
+        subject { AuthorizationRequest.new(resource_owner, attributes_with_redirect) }
 
         describe "after authorization" do
           before { subject.authorize }
@@ -131,11 +183,6 @@ module Doorkeeper::OAuth
           end
         end
 
-        describe "when :redirect_uri is missing" do
-          subject     { auth(attributes.except(:redirect_uri)) }
-          its(:error) { should == :invalid_redirect_uri }
-        end
-
         describe "when :client_id is missing" do
           subject     { auth(attributes.except(:client_id)) }
           its(:error) { should == :invalid_client }
@@ -184,8 +231,77 @@ module Doorkeeper::OAuth
 
       let(:attributes) { base_attributes.merge!(:response_type => "token") }
 
-      describe "with valid attributes" do
+      describe "with valid attributes (redirect_uri not included)" do
         subject { AuthorizationRequest.new(resource_owner, attributes) }
+
+        describe "after authorization" do
+          before { subject.authorize }
+
+          its(:response_type) { should == "token" }
+          its(:client_id)     { should == client.uid }
+          its(:scope)         { should == "public write" }
+          its(:state)         { should == "return-this" }
+          its(:error)         { should be_nil }
+
+          describe ".success_redirect_uri" do
+            let(:fragment) { URI.parse(subject.success_redirect_uri).fragment }
+
+            it "has a fragment" do
+              fragment.should_not be_nil
+            end
+
+            it "doesn't have query parameters" do
+              URI.parse(subject.success_redirect_uri).query.should be_nil
+            end
+
+            it "includes the access token" do
+              fragment.should =~ %r{access_token=\w+}
+            end
+
+            it "includes the token type" do
+              fragment.should =~ %r{token_type=bearer}
+            end
+
+            it "includes the expires in" do
+              fragment.should =~ %r{expires_in=\w+}
+            end
+
+            it "includes the state previous assumed" do
+              fragment.should =~ %r{state=return-this}
+            end
+          end
+        end
+
+        describe :scopes  do
+          it "returns scopes objects returned by Doorkeeper::Scopes with names specified by scopes" do
+            scopes_object = double(Doorkeeper::Scopes)
+            Doorkeeper.stub_chain(:configuration, :scopes, :with_names).with("public", "write").and_return(scopes_object)
+            subject.scopes.should == scopes_object
+          end
+        end
+
+        describe :authorize do
+          let(:authorization_request) { AuthorizationRequest.new(resource_owner, attributes) }
+          subject { authorization_request.authorize }
+
+          it "returns Doorkeeper::AccessGrant object" do
+            subject.is_a? Doorkeeper::AccessGrant
+          end
+
+          it "returns instance saved in the database" do
+            subject.should be_persisted
+          end
+
+          it "returns object that has scopes attribute same as scope attribute of authorization request" do
+            subject.scopes == authorization_request.scope
+          end
+        end
+
+      end
+
+      describe "with valid attributes (redirect_uri included)" do
+        let(:attributes_with_redirect) {attributes.merge!(:redirect_uri => client.redirect_uri)}
+        subject { AuthorizationRequest.new(resource_owner, attributes_with_redirect) }
 
         describe "after authorization" do
           before { subject.authorize }
@@ -271,11 +387,6 @@ module Doorkeeper::OAuth
             subject     { auth(attributes.except(attribute)) }
             its(:error) { should == :invalid_request }
           end
-        end
-
-        describe "when :redirect_uri is missing" do
-          subject     { auth(attributes.except(:redirect_uri)) }
-          its(:error) { should == :invalid_redirect_uri }
         end
 
         describe "when :client_id is missing" do
