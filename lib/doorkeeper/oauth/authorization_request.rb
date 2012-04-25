@@ -82,7 +82,7 @@ module Doorkeeper::OAuth
     end
 
     def validate_redirect_uri
-      @redirect_uri ||= client.redirect_uri
+      @redirect_uri ||= client.redirect_uri unless response_type == 'token'
       URIChecker.valid_for_authorization?(redirect_uri, client.redirect_uri)
     end
 
