@@ -6,6 +6,8 @@ class Doorkeeper::AuthorizationsController < Doorkeeper::ApplicationController
       if authorization.access_token_exists?
         authorization.authorize
         redirect_to authorization.success_redirect_uri
+      elsif authorization.skip_scopes_check?
+        process_scope_approval
       else
         render_approve_scopes_view
       end
@@ -17,13 +19,7 @@ class Doorkeeper::AuthorizationsController < Doorkeeper::ApplicationController
   end
 
   def create
-    if authorization.authorize
-      redirect_to authorization.success_redirect_uri
-    elsif authorization.redirect_on_error?
-      redirect_to authorization.invalid_redirect_uri
-    else
-      render_error_view
-    end
+    process_scope_approval
   end
 
   def destroy
@@ -44,6 +40,16 @@ class Doorkeeper::AuthorizationsController < Doorkeeper::ApplicationController
   def authorization
     authorization_params = params.has_key?(:authorization) ? params[:authorization] : params
     @authorization ||= Doorkeeper::OAuth::AuthorizationRequest.new(current_resource_owner, authorization_params)
+  end
+
+  def process_scope_approval
+    if authorization.authorize
+      redirect_to authorization.success_redirect_uri
+    elsif authorization.redirect_on_error?
+      redirect_to authorization.invalid_redirect_uri
+    else
+      render_error_view
+    end
   end
 
 end

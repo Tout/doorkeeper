@@ -4,6 +4,10 @@ module Doorkeeper::OAuth
     include Doorkeeper::OAuth::Authorization::URIBuilder
     include Doorkeeper::OAuth::Helpers
 
+    CLIENT_UIDS_TO_SKIP_SCOPES_SCREEN = [ 
+      "33489b65a8be52f1853c306bc61a58bd18882eba8b18e1195024708302f22ccb" 
+    ]
+
     ATTRIBUTES = [
       :response_type,
       :client_id,
@@ -65,6 +69,11 @@ module Doorkeeper::OAuth
 
     def scopes
       Doorkeeper.configuration.scopes.with_names(*scope.split(" ")) if has_scope?
+    end
+
+    def skip_scopes_check?
+      val =  client && CLIENT_UIDS_TO_SKIP_SCOPES_SCREEN.include?(client.uid)
+      val
     end
 
     private
