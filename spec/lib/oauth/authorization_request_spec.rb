@@ -14,6 +14,7 @@ module Doorkeeper::OAuth
 
     before :each do
       Doorkeeper.configuration.stub(:default_scopes).and_return(Doorkeeper::OAuth::Scopes.from_string('public write'))
+      Doorkeeper.configuration.stub(:confirm_application_owner?).and_return(false)
     end
 
     describe "with a code response_type" do

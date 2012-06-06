@@ -48,6 +48,8 @@ ActiveRecord::Schema.define(:version => 20120524202412) do
     t.string   "redirect_uri", :null => false
     t.datetime "created_at",   :null => false
     t.datetime "updated_at",   :null => false
+    t.integer  "owner_id",     :null => true
+    t.string   "owner_type",   :null => true
   end
 
   add_index "oauth_applications", ["uid"], :name => "index_oauth_applications_on_uid", :unique => true
