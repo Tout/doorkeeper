@@ -17,7 +17,7 @@ module Doorkeeper
 
     before_validation :generate_uid, :generate_secret, :on => :create
 
-    attr_accessible :name, :redirect_uri, :app_type
+    attr_accessible :name, :redirect_uri, :app_type, :owner
 
     def self.authenticate(uid, secret)
       find_by_uid_and_secret(uid, secret)
