@@ -9,6 +9,7 @@ module Doorkeeper
         base.class_eval do
           belongs_to :owner, :polymorphic => true
           validates :owner, :presence => true, :if => :validate_owner?      
+          attr_accessible :owner 
         end
       end
     end
