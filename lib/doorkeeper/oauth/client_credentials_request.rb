@@ -1,9 +1,9 @@
 require 'doorkeeper/oauth/error'
 require 'doorkeeper/oauth/error_response'
 require 'doorkeeper/oauth/scopes'
+require 'doorkeeper/oauth/token_response'
 require 'doorkeeper/oauth/client_credentials/creator'
 require 'doorkeeper/oauth/client_credentials/issuer'
-require 'doorkeeper/oauth/client_credentials/response'
 require 'doorkeeper/oauth/client_credentials/validation'
 
 module Doorkeeper
@@ -11,7 +11,6 @@ module Doorkeeper
     class ClientCredentialsRequest
       attr_accessor :issuer, :server, :client, :original_scopes, :scopes
       attr_reader   :response
-      alias         :authorization :response  # Remove this when API is consistent
       alias         :error_response :response
 
       delegate :error, :to => :issuer
@@ -27,8 +26,9 @@ module Doorkeeper
       end
 
       def authorize
-        @response = if issuer.create(client, scopes)
-          Response.new(issuer.token)
+        status = issuer.create(client, scopes)
+        @response = if status
+          TokenResponse.new(issuer.token)
         else
           ErrorResponse.from_request(self)
         end

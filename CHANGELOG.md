@@ -1,10 +1,93 @@
 # Changelog
 
-## 0.5.0 (unreleased)
+## 0.6.7
+
+- internals
+  - [#188] Add IDs to the show views for integration testing [@egtann](https://github.com/egtann)
+
+## 0.6.6
+
+- enhancements
+  - [#187] Raise error if configuration is not set
+
+## 0.6.5
+
+- enhancements
+  - [#184] Vendor the Bootstrap CSS [@tylerhunt](https://github.com/tylerhunt)
+
+## 0.6.4
+
+- bug
+  - [#180] Add localization to authorized_applications destroy notice [@aalvarado](https://github.com/aalvarado)
+
+## 0.6.3
+
+- bugfixes
+  - [#163] Error response content-type header should be application/json [@ggayan](https://github.com/ggayan)
+  - [#175] Make token.expires_in_seconds return nil when expires_in is nil [@miyagawa](https://github.com/miyagawa)
+- enhancements
+  - [#166, #172, #174] Behavior to automatically authorize based on a configured proc
+- internals
+  - [#168] Using expectation syntax for controller specs [@rdsoze](https://github.com/rdsoze)
+
+## 0.6.2
+
+- bugfixes
+  - [#162] Remove ownership columns from base migration template [@rdsoze](https://github.com/rdsoze)
+
+## 0.6.1
+
+- bugfixes
+  - [#160] Removed |routes| argument from initializer authenticator blocks
+- documentation
+  - [#160] Fixed description of context of authenticator blocks
+
+## 0.6.0
+
+- enhancements
+  - Mongoid `orm` configuration accepts only :mongoid2 or :mongoid3
+  - Authorization endpoint does not redirect in #new action anymore. It wasn't specified by OAuth spec
+  - TokensController now inherits from ActionController::Metal. There might be performance upgrades
+  - Add link to authorization in Applications scaffold
+  - [#116] MongoMapper support [@carols10cents](https://github.com/carols10cents)
+  - [#122] Mongoid3 support [@petergoldstein](https://github.com/petergoldstein)
+  - [#150] Introduce test redirect uri for applications
+- bugfixes
+  - [#157] Response token status should be `:ok`, not `:success` [@theycallmeswift](https://github.com/theycallmeswift)
+  - [#159] Remove ActionView::Base.field_error_proc override (fixes #145)
+- internals
+  - Update development dependencies
+  - Several refactorings
+  - Rails/ORM are easily swichable with env vars (rails and orm)
+  - Travis now tests against Mongoid v2
+
+## 0.5.0.rc1
+
+Official support for rubinius was removed.
 
 - enhancements
   - Configure the way access token is retrieved from request (default to bearer header)
   - Authorization Code expiration time is now configurable
+  - Add support for mongoid
+  - [#78, #128, #137, #138] Application Ownership
+  - [#92] Allow users to skip controllers
+  - [#99] Remove deprecated warnings for data-* attributes [@towerhe](https://github.com/towerhe)
+  - [#101] Return existing access_token for PasswordAccessTokenRequest [@benoist](https://github.com/benoist)
+  - [#104] Changed access token scopes example code to default_scopes and optional_scopes [@amkirwan](https://github.com/amkirwan)
+  - [#107] Fix typos in initializer
+  - [#123] i18n for validator, flash messages [@petergoldstein](https://github.com/petergoldstein)
+  - [#140] ActiveRecord is the default value for the ORM [@petergoldstein](https://github.com/petergoldstein)
+- internals
+  - [#112, #120] Replacing update_attribute with update_column to eliminate deprecation warnings [@rmoriz](https://github.com/rmoriz), [@petergoldstein](https://github.com/petergoldstein)
+  - [#121] Updating all development dependencies to recent versions. [@petergoldstein](https://github.com/petergoldstein)
+  - [#144] Adding MongoDB dependency to .travis.yml [@petergoldstein](https://github.com/petergoldstein)
+  - [#143] Displays errors for unconfigured error messages [@timgaleckas](https://github.com/timgaleckas)
+- bugfixes
+  - [#102] Not returning 401 when access token generation fails [@cslew](https://github.com/cslew)
+  - [#125] Doorkeeper is using ActiveRecord version of as_json in ORM agnostic code [@petergoldstein](https://github.com/petergoldstein)
+  - [#142] Prevent double submission of password based authentication [@bdurand](https://github.com/bdurand)
+- documentation
+  - [#141] Add rack-cors middleware to readme [@gottfrois](https://github.com/gottfrois)
 
 ## 0.4.2
 
