@@ -1,18 +1,30 @@
-source 'http://rubygems.org'
+# Defaults. For supported versions check .travis.yml
+ENV['rails'] ||= '3.2.8'
+ENV['orm']   ||= 'active_record'
+
+source :rubygems
 
 gem 'jquery-rails'
 
-group :mongoid do
-  gem 'mongoid', '~> 2.4'
-  gem 'bson_ext', '~> 1.6.0'
-end
+# Define Rails version
+rails_version = ENV['rails']
+gem 'rails', rails_version
 
-group :active_record do
-  gem 'activerecord', '~> 3.1'
+case ENV['orm']
+when 'active_record'
+  gem 'activerecord', rails_version
+
+when 'mongoid2'
+  gem 'mongoid', '2.5.1'
+  gem 'bson_ext', '~> 1.7'
+
+when 'mongoid3'
+  gem 'mongoid', '3.0.10'
+
+when 'mongo_mapper'
+  gem 'mongo_mapper', '0.12.0'
+  gem 'bson_ext', '~> 1.7'
+
 end
 
 gemspec
-
-# jquery-rails is used by the dummy application
-gem 'jquery-rails'
-

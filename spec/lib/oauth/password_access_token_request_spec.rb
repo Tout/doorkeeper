@@ -2,172 +2,63 @@ require 'spec_helper_integration'
 
 module Doorkeeper::OAuth
   describe PasswordAccessTokenRequest do
-    let(:client) { Factory(:application) }
-    let(:owner)  { User.create!(:name => "Joe", :password => "sekret") }
-    let(:params) {
-      {
-        :grant_type    => "password"
-      }
-    }
+    let(:server) { mock :server, :default_scopes => Doorkeeper::OAuth::Scopes.new, :access_token_expires_in => 2.hours, :refresh_token_enabled? => false }
+    let(:client) { FactoryGirl.create(:application) }
+    let(:owner)  { mock :owner, :id => 99 }
 
-    describe "with a valid owner and client" do
-      subject { PasswordAccessTokenRequest.new(client, owner, params) }
-
-      before { subject.authorize }
-
-      it { should be_valid }
-
-      its(:token_type)    { should == "bearer" }
-      its(:error)         { should be_nil }
-      its(:refresh_token) { should be_nil }
-
-      it "has an access token" do
-        subject.access_token.token.should =~ /\w+/
-      end
+    subject do
+      PasswordAccessTokenRequest.new(server, client, owner)
     end
 
-    describe "with a valid client but an invalid owner" do
-      subject { PasswordAccessTokenRequest.new(client, nil, params) }
-
-      before { subject.authorize }
-
-      it { should_not be_valid }
-      its(:error)         { should == :invalid_resource_owner }
-      its(:access_token)  { should be_nil }
-      its(:refresh_token) { should be_nil }
-    end
-
-    describe "with a valid owner but an invalid client" do
-      subject { PasswordAccessTokenRequest.new(nil, owner, params) }
-
-      before { subject.authorize }
-
-      it { should_not be_valid }
-      its(:error)         { should == :invalid_client }
-      its(:access_token)  { should be_nil }
-      its(:refresh_token) { should be_nil }
-    end
-
-    describe "creating the access token" do
-      subject { PasswordAccessTokenRequest.new(client, owner, params) }
-
-      it "creates with correct params" do
-        Doorkeeper::AccessToken.should_receive(:create!).with({
-          :application_id    => client.id,
-          :resource_owner_id => owner.id,
-          :expires_in        => 2.hours,
-          :scopes            =>"",
-          :use_refresh_token => false,
-        })
+    it 'issues a new token for the client' do
+      expect do
         subject.authorize
-      end
+      end.to change { client.access_tokens.count }.by(1)
+    end
 
-      it "creates a refresh token if Doorkeeper is configured to do so" do
-        Doorkeeper.configure { use_refresh_token }
+    it "requires the owner" do
+      subject.resource_owner = nil
+      subject.validate
+      subject.error.should == :invalid_resource_owner
+    end
 
-        Doorkeeper::AccessToken.should_receive(:create!).with({
-          :application_id    => client.id,
-          :resource_owner_id => owner.id,
-          :expires_in        => 2.hours,
-          :scopes            =>"",
-          :use_refresh_token => true,
-        })
+    it 'requires the client' do
+      subject.client = nil
+      subject.validate
+      subject.error.should == :invalid_client
+    end
+
+    it 'skips token creation if there is already one' do
+      FactoryGirl.create(:access_token, :application_id => client.id, :resource_owner_id => owner.id)
+      expect do
         subject.authorize
-      end
+      end.to_not change { Doorkeeper::AccessToken.count }
     end
 
-    describe "with an existing valid access token" do
-      subject { PasswordAccessTokenRequest.new(client, owner, params) }
-
-      before { subject.authorize }
-      it { should be_valid }
-      its(:error)         { should be_nil }
-
-      it "will not create a new token" do
-        subject.should_not_receive(:create_access_token)
+    it 'revokes old token if expired' do
+      token = FactoryGirl.create(:access_token, :application_id => client.id, :resource_owner_id => owner.id, :expires_in => -100)
+      expect do
         subject.authorize
-      end
-    end
-
-    describe "with an existing expired access token" do
-      subject { PasswordAccessTokenRequest.new(client, owner, params) }
-
-      before do
-        PasswordAccessTokenRequest.new(client, owner, params).authorize
-        last_token = Doorkeeper::AccessToken.last
-        # TODO: make this better, maybe with an expire! method?
-        last_token.update_attribute :created_at, 10.days.ago
-      end
-
-      it "will create a new token" do
-        expect {
-          subject.authorize
-        }.to change { Doorkeeper::AccessToken.count }.by(1)
-      end
-    end
-
-    describe "finding the current access token" do
-      subject { PasswordAccessTokenRequest.new(client, owner, params) }
-      it { should be_valid }
-      its(:error)         { should be_nil }
-
-      before { subject.authorize }
-
-      it "should find the access token and not create a new one" do
-        subject.should_not_receive(:create_access_token)
-        access_token = subject.authorize
-        subject.access_token.should eq(access_token)
-      end
-    end
-
-    describe "creating the first access_token" do
-      subject { PasswordAccessTokenRequest.new(client, owner, params) }
-      it { should be_valid }
-      its(:error)         { should be_nil }
-
-      it "should create a new access token" do
-        subject.should_receive(:create_access_token)
-        subject.authorize
-      end
+      end.to change { token.reload.revoked? }
     end
 
     describe "with scopes" do
       subject do
-        PasswordAccessTokenRequest.new(client, owner, params.merge(:scope => 'public'))
+        PasswordAccessTokenRequest.new(server, client, owner, :scope => 'public')
       end
 
-      before do
-        Doorkeeper.configure do
-          default_scopes :public
-        end
+      it 'validates the current scope' do
+        server.stub :scopes => Doorkeeper::OAuth::Scopes.from_string('another')
+        subject.validate
+        subject.error.should == :invalid_scope
       end
 
       it 'creates the token with scopes' do
+        server.stub :scopes => Doorkeeper::OAuth::Scopes.from_string("public")
         expect {
           subject.authorize
         }.to change { Doorkeeper::AccessToken.count }.by(1)
         Doorkeeper::AccessToken.last.scopes.should include(:public)
-      end
-    end
-
-    describe "with errors" do
-      def token(params)
-        PasswordAccessTokenRequest.new(client, owner, params)
-      end
-
-      it "includes the error in the response" do
-        access_token = token(params.except(:grant_type))
-        access_token.error_response.name.should == :invalid_request
-      end
-
-      describe "when client is not present" do
-        subject     { PasswordAccessTokenRequest.new(nil, owner, params) }
-        its(:error) { should == :invalid_client }
-      end
-
-      describe "when :grant_type is not 'password'" do
-        subject     { token(params.merge(:grant_type => "invalid")) }
-        its(:error) { should == :unsupported_grant_type }
       end
     end
   end

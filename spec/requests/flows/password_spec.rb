@@ -5,6 +5,22 @@
 
 require 'spec_helper_integration'
 
+feature 'Resource Owner Password Credentials Flow inproperly set up' do
+  background do
+    client_exists
+    create_resource_owner
+  end
+
+  context 'with valid user credentials' do
+    scenario "should issue new token" do
+      pending 'Check a way to supress warnings here (or handle config better)'
+      expect {
+        post password_token_endpoint_url(:client => @client, :resource_owner => @resource_owner)
+      }.to_not change { Doorkeeper::AccessToken.count }
+    end
+  end
+end
+
 feature 'Resource Owner Password Credentials Flow' do
   background do
     config_is_set(:resource_owner_from_credentials) { User.authenticate! params[:username], params[:password] }
@@ -31,6 +47,16 @@ feature 'Resource Owner Password Credentials Flow' do
       token = Doorkeeper::AccessToken.first
 
       should_have_json 'refresh_token',  token.refresh_token
+    end
+
+    scenario 'should return the same token if it is still accessible' do
+      client_is_authorized(@client, @resource_owner)
+
+      post password_token_endpoint_url(:client => @client, :resource_owner => @resource_owner)
+
+      Doorkeeper::AccessToken.count.should be(1)
+
+      should_have_json 'access_token', Doorkeeper::AccessToken.first.token
     end
   end
 

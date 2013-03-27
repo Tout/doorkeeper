@@ -6,7 +6,7 @@ module Doorkeeper
     include Doorkeeper::Models::Accessible
     include Doorkeeper::Models::Scopes
 
-    belongs_to :application, :class_name => "Doorkeeper::Application"
+    belongs_to :application, :class_name => "Doorkeeper::Application", :inverse_of => :access_tokens
 
     validates :application_id, :token, :presence => true
     validates :token, :uniqueness => true
@@ -27,8 +27,7 @@ module Doorkeeper
     end
 
     def self.revoke_all_for(application_id, resource_owner)
-      where(:application_id => application_id,
-              :resource_owner_id => resource_owner.id).delete_all
+      delete_all_for(application_id, resource_owner)
     end
 
     def self.matching_token_for(application, resource_owner_or_id, scopes)
@@ -45,6 +44,15 @@ module Doorkeeper
       self.use_refresh_token
     end
 
+    def as_json(options={})
+      {
+        :resource_owner_id => self.resource_owner_id,
+        :scopes => self.scopes,
+        :expires_in_seconds => self.expires_in_seconds,
+        :application => { :uid => self.application.uid }
+      }
+    end
+
     private
 
     def generate_refresh_token
@@ -54,5 +62,6 @@ module Doorkeeper
     def generate_token
       self.token = UniqueToken.generate
     end
+
   end
 end

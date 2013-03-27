@@ -15,6 +15,12 @@ module Doorkeeper
         ActionDispatch::Routing::Mapper.send :include, Doorkeeper::Rails::Routes::Helper
       end
 
+      def self.warn_if_using_mount_method!
+        if File.read(::Rails.root + 'config/routes.rb') =~ %r[mount Doorkeeper::Engine]
+          warn "\n[DOORKEEPER] `mount Doorkeeper::Engine` is not being used anymore. Please replace it with `use_doorkeeper` in your /config/routes.rb file\n"
+        end
+      end
+
       attr_accessor :routes
 
       def initialize(routes, &options)
@@ -28,6 +34,7 @@ module Doorkeeper
           map_route(:tokens, :token_routes)
           map_route(:applications, :application_routes)
           map_route(:authorized_applications, :authorized_applications_routes)
+          map_route(:token_info, :token_info_routes)
         end
       end
 
@@ -40,15 +47,22 @@ module Doorkeeper
 
       def authorization_routes(mapping)
         routes.scope :controller => mapping[:controllers] do
-          routes.match 'authorize', :via => :get,    :action => :new, :as => mapping[:as]
-          routes.match 'authorize', :via => :post,   :action => :create, :as => mapping[:as]
-          routes.match 'authorize', :via => :delete, :action => :destroy, :as => mapping[:as]
+          routes.match 'authorize/:code', :via => :get,    :action => :show,    :as => "#{mapping[:as]}_code"
+          routes.match 'authorize',       :via => :get,    :action => :new,     :as => mapping[:as]
+          routes.match 'authorize',       :via => :post,   :action => :create,  :as => mapping[:as]
+          routes.match 'authorize',       :via => :delete, :action => :destroy, :as => mapping[:as]
         end
       end
 
       def token_routes(mapping)
         routes.scope :controller => mapping[:controllers] do
           routes.match 'token', :via => :post, :action => :create, :as => mapping[:as]
+        end
+      end
+
+      def token_info_routes(mapping)
+        routes.scope :controller => mapping[:controllers] do
+          routes.match 'token/info', :via => :get, :action => :show, :as => mapping[:as]
         end
       end
 

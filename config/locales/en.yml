@@ -1,4 +1,34 @@
 en:
+  activerecord:
+    errors:
+      models:
+        application:
+          attributes:
+            redirect_uri:
+              fragment_present: 'cannot contain a fragment.'
+              has_query_parameter: 'cannot contain a query parameter.'
+              invalid_uri: 'must be a valid URI.'
+              relative_uri: 'must be an absolute URI.'
+  mongoid:
+    errors:
+      models:
+        application:
+          attributes:
+            redirect_uri:
+              fragment_present: 'cannot contain a fragment.'
+              has_query_parameter: 'cannot contain a query parameter.'
+              invalid_uri: 'must be a valid URI.'
+              relative_uri: 'must be an absolute URI.'
+  mongo_mapper:
+    errors:
+      models:
+        application:
+          attributes:
+            redirect_uri:
+              fragment_present: 'cannot contain a fragment.'
+              has_query_parameter: 'cannot contain a query parameter.'
+              invalid_uri: 'must be a valid URI.'
+              relative_uri: 'must be an absolute URI.'
   doorkeeper:
     errors:
       messages:
@@ -11,6 +41,10 @@ en:
         server_error: 'The authorization server encountered an unexpected condition which prevented it from fulfilling the request.'
         temporarily_unavailable: 'The authorization server is currently unable to handle the request due to a temporary overloading or maintenance of the server.'
 
+        #configuration error messages
+        credential_flow_not_configured: 'Resource Owner Password Credentials flow failed due to Doorkeeper.configure.resource_owner_from_credentials being unconfigured.'
+        resource_owner_authenticator_not_configured: 'Resource Owner find failed due to Doorkeeper.configure.resource_owner_authenticator being unconfiged.'
+
         # Access grant errors
         unsupported_response_type: 'The authorization server does not support this response type.'
 
@@ -21,3 +55,14 @@ en:
 
         # Password Access token errors
         invalid_resource_owner: 'The provided resource owner credentials are not valid, or resource owner cannot be found'
+    flash:
+      applications:
+        create:
+          notice: 'Application created.'
+        destroy:
+          notice: 'Application deleted.'
+        update:
+          notice: 'Application updated.'
+      authorized_applications:
+        destroy:
+          notice: 'Application revoked.'
